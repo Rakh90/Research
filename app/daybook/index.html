@@ -496,6 +496,35 @@
   .icon-x { color: var(--ink-faint); background: none; border: none; cursor: pointer; padding: 0.3rem; }
 
   .divider { height: 1px; background: var(--border-soft); border: none; margin: 0.2rem 0; }
+
+  /* ---- Export sheet extras ---- */
+  .export-toggle { cursor: pointer; }
+  .export-preview {
+    width: 100%; min-height: 14rem;
+    font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  /* ---- Print ---- */
+  #print-root-wrap { display: none; }
+  @media print {
+    #app { display: none !important; }
+    .scrim { display: none !important; }
+    #print-root-wrap {
+      display: block !important;
+      background: #ffffff;
+      color: #131313;
+      padding: 0.5in 0.4in;
+      font-family: var(--font-body);
+    }
+    .print-doc h1 { font-family: var(--font-display); font-size: 1.5rem; margin: 0 0 0.15rem; color: #131313; }
+    .print-doc .meta { font-size: 0.85rem; color: #444; margin-bottom: 1.1rem; font-family: var(--font-mono); }
+    .print-doc section { margin-bottom: 0.85rem; break-inside: avoid; }
+    .print-doc h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: #666; margin: 0 0 0.35rem; font-family: var(--font-mono); }
+    .print-doc p { margin: 0; font-size: 0.92rem; line-height: 1.5; }
+    .print-doc .g { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #ddd; padding: 0.3rem 0; font-size: 0.9rem; }
+    .print-doc .foot { margin-top: 1.5rem; font-size: 0.7rem; color: #888; border-top: 1px solid #ddd; padding-top: 0.5rem; }
+  }
 </style>
 
 <div id="app">
@@ -520,6 +549,8 @@
     </button>
   </nav>
 </div>
+
+<div id="print-root-wrap"><div class="print-doc" id="print-doc"></div></div>
 
 <script>
 (function () {
@@ -606,7 +637,8 @@
     archive: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4.2" rx="1.2"></rect><path d="M5 8.7V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V8.7"></path><path d="M10 13h4"></path></svg>',
     empty: '<svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><circle cx="17" cy="8.5" r="2.4"></circle><path d="M15.3 13.8c2.6.2 4.7 2.3 4.7 5.2"></path></svg>',
     clock: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"></circle><path d="M12 7.5V12l3 2"></path></svg>',
-    chevron: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>'
+    chevron: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>',
+    exp: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"></path><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"></path></svg>'
   };
 
   function greeting() {
@@ -712,7 +744,8 @@
         '<div class="card-head"><h2>Personal notes</h2><span class="hint">for you only</span></div>' +
         '<p class="note">A private memory-jogger for writing your real shift/behavior report — not a substitute for it.</p>' +
         '<textarea rows="3" data-action="edit-note" placeholder="Anything you want to remember when you write the official notes…">' + esc(entry.note) + '</textarea>' +
-      '</div>';
+      '</div>' +
+      '<button class="btn btn-ghost btn-block" data-action="export-today">' + ICONS.exp + ' Export this shift</button>';
   }
 
   function todayEvents(target) {
@@ -720,6 +753,7 @@
     if (!action) return false;
     var entry = ensureEntry(state.currentClientId, todayStr);
     if (action === "go-clients") { setTab("clients"); return true; }
+    if (action === "export-today") { openExportSheet(entry.id); return true; }
     if (action === "dismiss-seed") { state.seeded = false; save(); renderToday(); return true; }
     if (action === "pick-client") { state.currentClientId = target.getAttribute("data-id"); save(); renderToday(); return true; }
     if (action === "toggle") { var f = target.getAttribute("data-field"); entry[f] = !entry[f]; save(); renderToday(); return true; }
@@ -923,7 +957,12 @@
     scrim.innerHTML =
       '<div class="sheet">' +
         '<div class="handle"></div>' +
-        '<div class="sheet-head"><h2>' + esc(c ? c.label : "Client") + ' — ' + formattedDate(e.date) + '</h2><button class="sheet-close" data-action="close">' + ICONS.x + '</button></div>' +
+        '<div class="sheet-head"><h2>' + esc(c ? c.label : "Client") + ' — ' + formattedDate(e.date) + '</h2>' +
+          '<div style="display:flex;gap:.3rem;align-items:center">' +
+            '<button class="sheet-close" data-action="export-entry" aria-label="Export">' + ICONS.exp + '</button>' +
+            '<button class="sheet-close" data-action="close">' + ICONS.x + '</button>' +
+          '</div>' +
+        '</div>' +
         '<div class="field"><label>Morning</label><p class="note">Hygiene: ' + (e.hygiene ? "done" : "not marked") + ' · Breakfast: ' + (e.breakfast ? "done" : "not marked") + (e.support ? " · Support: " + supportLabels[e.support] : "") + '</p></div>' +
         (e.schedule.length ? '<div class="field"><label>Schedule</label><p class="note">' + e.schedule.map(function(s){return (s.done ? "✓ " : "• ") + esc(s.text);}).join("<br/>") + '</p></div>' : "") +
         '<div class="field"><label>Midday</label><p class="note">Rest: ' + (e.nap ? "yes" : "not marked") + ' · Lunch: ' + (e.lunch ? "eaten" : "not marked") + '</p></div>' +
@@ -934,7 +973,125 @@
     document.body.appendChild(scrim);
     scrim.addEventListener("click", function (ev) {
       var t = ev.target.closest("[data-action]");
-      if (ev.target === scrim || (t && t.getAttribute("data-action") === "close")) scrim.remove();
+      if (ev.target === scrim || (t && t.getAttribute("data-action") === "close")) { scrim.remove(); return; }
+      if (t && t.getAttribute("data-action") === "export-entry") { scrim.remove(); openExportSheet(e.id); }
+    });
+  }
+
+  /* ---------------- Export / print ---------------- */
+  var SUPPORT_LABELS = { independent: "Independent", prompted: "Prompted", "hands-on": "Hands-on" };
+  function outcomeLabel(v) { return v === "accomplished" ? "Accomplished" : v === "declined" ? "Declined" : "Not attempted"; }
+
+  function loggedGoals(entry, client) {
+    return (client ? client.goals : []).filter(function (g) { return entry.goalOutcomes[g.id]; });
+  }
+
+  function buildSummaryText(entry, client, includeNotes) {
+    var lines = [];
+    lines.push(client.label + " — " + formattedDate(entry.date));
+    lines.push("");
+    lines.push("MORNING");
+    lines.push("Hygiene: " + (entry.hygiene ? "complete" : "not marked"));
+    lines.push("Breakfast: " + (entry.breakfast ? "eaten" : "not marked"));
+    if (entry.support) lines.push("Support level: " + SUPPORT_LABELS[entry.support]);
+    if (entry.schedule.length) {
+      lines.push("");
+      lines.push("SCHEDULE");
+      entry.schedule.forEach(function (s) { lines.push((s.done ? "[x] " : "[ ] ") + s.text); });
+    }
+    lines.push("");
+    lines.push("MIDDAY");
+    lines.push("Rest: " + (entry.nap ? "yes" : "not marked"));
+    lines.push("Lunch: " + (entry.lunch ? "eaten" : "not marked"));
+    var goals = loggedGoals(entry, client);
+    if (goals.length) {
+      lines.push("");
+      lines.push("GOALS");
+      goals.forEach(function (g) { lines.push("- " + g.text + ": " + outcomeLabel(entry.goalOutcomes[g.id])); });
+    }
+    if (entry.fun) { lines.push(""); lines.push("FUN / ACTIVITIES"); lines.push(entry.fun); }
+    if (includeNotes && entry.note) { lines.push(""); lines.push("PERSONAL NOTES (not the official record)"); lines.push(entry.note); }
+    return lines.join("\n");
+  }
+
+  function copyToClipboard(text, btn) {
+    var old = btn.textContent;
+    function done(ok) {
+      btn.textContent = ok ? "Copied" : "Couldn’t copy — select the text above instead";
+      setTimeout(function () { btn.textContent = old; }, 1700);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }).catch(function () { done(false); });
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      done(ok);
+    } catch (e) { done(false); }
+  }
+
+  function printEntry(entry, client, includeNotes) {
+    var goals = loggedGoals(entry, client);
+    var html =
+      "<h1>" + esc(client.label) + "</h1>" +
+      '<div class="meta">' + esc(formattedDate(entry.date)) + " · printed " + esc(new Date().toLocaleDateString()) + "</div>" +
+      "<section><h3>Morning</h3><p>Hygiene: " + (entry.hygiene ? "complete" : "not marked") +
+        " &nbsp;·&nbsp; Breakfast: " + (entry.breakfast ? "eaten" : "not marked") +
+        (entry.support ? " &nbsp;·&nbsp; Support: " + esc(SUPPORT_LABELS[entry.support]) : "") + "</p></section>" +
+      (entry.schedule.length ? "<section><h3>Schedule</h3>" + entry.schedule.map(function (s) {
+        return '<div class="g"><span>' + esc(s.text) + "</span><span>" + (s.done ? "Done" : "—") + "</span></div>";
+      }).join("") + "</section>" : "") +
+      "<section><h3>Midday</h3><p>Rest: " + (entry.nap ? "yes" : "not marked") + " &nbsp;·&nbsp; Lunch: " + (entry.lunch ? "eaten" : "not marked") + "</p></section>" +
+      (goals.length ? "<section><h3>Goals</h3>" + goals.map(function (g) {
+        return '<div class="g"><span>' + esc(g.text) + "</span><span>" + outcomeLabel(entry.goalOutcomes[g.id]) + "</span></div>";
+      }).join("") + "</section>" : "") +
+      (entry.fun ? "<section><h3>Fun / activities</h3><p>" + esc(entry.fun) + "</p></section>" : "") +
+      (includeNotes && entry.note ? "<section><h3>Personal notes (not the official record)</h3><p>" + esc(entry.note) + "</p></section>" : "") +
+      '<div class="foot">Generated in Daybook for your own reference — not an official agency record.</div>';
+    document.getElementById("print-doc").innerHTML = html;
+    window.print();
+  }
+
+  function openExportSheet(entryId) {
+    var entry = state.entries.filter(function (x) { return x.id === entryId; })[0];
+    if (!entry) return;
+    var client = clientById(entry.clientId);
+    if (!client) return;
+    var includeNotes = true;
+
+    var scrim = document.createElement("div");
+    scrim.className = "scrim";
+
+    function paint() {
+      var text = buildSummaryText(entry, client, includeNotes);
+      scrim.innerHTML =
+        '<div class="sheet">' +
+          '<div class="handle"></div>' +
+          '<div class="sheet-head"><h2>Export shift</h2><button class="sheet-close" data-action="close">' + ICONS.x + "</button></div>" +
+          '<div class="row export-toggle" data-action="toggle-notes"><div class="check' + (includeNotes ? " on" : "") + '">' + ICONS.check + '</div>' +
+            '<div class="label">Include personal notes<span class="desc">Turn off before printing something you’ll hand to someone else.</span></div></div>' +
+          '<textarea class="export-preview" readonly>' + esc(text) + "</textarea>" +
+          '<div class="sheet-actions">' +
+            '<button class="btn btn-ghost" data-action="copy-text">Copy as text</button>' +
+            '<button class="btn btn-primary" data-action="print-doc">' + ICONS.exp + " Print / Save PDF</button>" +
+          "</div>" +
+        "</div>";
+    }
+    paint();
+    document.body.appendChild(scrim);
+
+    scrim.addEventListener("click", function (ev) {
+      var t = ev.target.closest("[data-action]");
+      if (ev.target === scrim || (t && t.getAttribute("data-action") === "close")) { scrim.remove(); return; }
+      if (!t) return;
+      var act = t.getAttribute("data-action");
+      if (act === "toggle-notes") { includeNotes = !includeNotes; paint(); }
+      if (act === "copy-text") { copyToClipboard(buildSummaryText(entry, client, includeNotes), t); }
+      if (act === "print-doc") { printEntry(entry, client, includeNotes); }
     });
   }
 
