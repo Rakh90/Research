@@ -7,15 +7,16 @@ It is **not** a system of record. Behavior/incident data with real legal or repo
 ## What it does
 
 - **Today** — pick a client from your caseload, log morning routine (hygiene, breakfast, support level), build the day's schedule, mark goals accomplished / declined / not attempted, note fun activities, and jot personal notes for yourself.
-- **Clients** — add, edit, archive, or delete clients and their goal lists. Archived clients keep their shift history.
+- **Clients** — add, edit, archive, or delete clients and their goal lists. Archived clients keep their shift history. Retiring a goal (e.g. because it was mastered) keeps its historical data in Trends — it just gets tagged "retired" instead of disappearing.
 - **History** — past shifts grouped by day; tap into any entry for the full detail.
+- **Trends** — per client, how often each goal lands as accomplished / declined / not attempted: a per-goal breakdown, or an overall donut chart of all-time totals.
 - **Export** — from Today or from any History entry: a formatted summary you can copy as plain text or print / save as a PDF, to make writing your official notes faster. Personal notes are included by default and can be toggled off before printing something you'd hand to someone else.
 
 ## Data and privacy
 
 Everything is stored **only in your browser's local storage** on the device you open it on — there is no account, no backend, no sync between devices. Nothing is sent anywhere. Client entries are meant to use initials or a made-up label, not full names, since this is meant to stay low-stakes even as a personal tool.
 
-Clearing your browser's site data for this page will erase everything, so don't rely on it as your only copy of anything that matters.
+Clearing your browser's site data for this page will erase everything, so don't rely on it as your only copy of anything that matters — use **Clients → Backup & restore** to download a JSON backup periodically, and definitely before clearing browser data or switching phones. The same screen restores from a backup file.
 
 ## Running it
 
