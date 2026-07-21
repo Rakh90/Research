@@ -1,0 +1,977 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Daybook — shift companion</title>
+<style>
+  :root {
+    --paper: #eef0e8;
+    --paper-flat: #e6e8df;
+    --surface: #f8f9f4;
+    --ink: #202b22;
+    --ink-muted: #5b6459;
+    --ink-faint: #8b9284;
+    --border: #d8dace;
+    --border-soft: #e3e4da;
+    --accent: #c4783a;
+    --accent-ink: #fffaf3;
+    --accent-soft: #f1dcc4;
+    --accent-soft-ink: #7a4a20;
+    --success: #3d7a5e;
+    --success-soft: #dcebe3;
+    --caution: #b5533c;
+    --caution-soft: #f3dcd4;
+    --neutral-pill: #9b9186;
+    --neutral-pill-soft: #eae6df;
+    --shadow: rgba(32, 43, 34, 0.09);
+    --shadow-lg: rgba(32, 43, 34, 0.16);
+    --font-display: ui-serif, Charter, "Iowan Old Style", "Georgia", "Times New Roman", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Seravek", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141c17;
+      --paper-flat: #101713;
+      --surface: #1d2721;
+      --ink: #eae7dd;
+      --ink-muted: #9ca69b;
+      --ink-faint: #6c7568;
+      --border: #2e3a32;
+      --border-soft: #263129;
+      --accent: #d68a4a;
+      --accent-ink: #1b1206;
+      --accent-soft: #3a2a17;
+      --accent-soft-ink: #f0c896;
+      --success: #57a883;
+      --success-soft: #1d3227;
+      --caution: #d07a5e;
+      --caution-soft: #3a2019;
+      --neutral-pill: #8b8478;
+      --neutral-pill-soft: #262a22;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --shadow-lg: rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #141c17;
+    --paper-flat: #101713;
+    --surface: #1d2721;
+    --ink: #eae7dd;
+    --ink-muted: #9ca69b;
+    --ink-faint: #6c7568;
+    --border: #2e3a32;
+    --border-soft: #263129;
+    --accent: #d68a4a;
+    --accent-ink: #1b1206;
+    --accent-soft: #3a2a17;
+    --accent-soft-ink: #f0c896;
+    --success: #57a883;
+    --success-soft: #1d3227;
+    --caution: #d07a5e;
+    --caution-soft: #3a2019;
+    --neutral-pill: #8b8478;
+    --neutral-pill-soft: #262a22;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --shadow-lg: rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --paper: #eef0e8;
+    --paper-flat: #e6e8df;
+    --surface: #f8f9f4;
+    --ink: #202b22;
+    --ink-muted: #5b6459;
+    --ink-faint: #8b9284;
+    --border: #d8dace;
+    --border-soft: #e3e4da;
+    --accent: #c4783a;
+    --accent-ink: #fffaf3;
+    --accent-soft: #f1dcc4;
+    --accent-soft-ink: #7a4a20;
+    --success: #3d7a5e;
+    --success-soft: #dcebe3;
+    --caution: #b5533c;
+    --caution-soft: #f3dcd4;
+    --neutral-pill: #9b9186;
+    --neutral-pill-soft: #eae6df;
+    --shadow: rgba(32, 43, 34, 0.09);
+    --shadow-lg: rgba(32, 43, 34, 0.16);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, var(--paper-flat), var(--paper));
+  }
+  #app {
+    width: 100%;
+    max-width: 30rem;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  button { font-family: inherit; }
+  input, textarea, select { font-family: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* ---- Top bar ---- */
+  .topbar {
+    padding: 1.5rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .topbar .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .topbar h1 {
+    font-size: 1.7rem;
+    line-height: 1.15;
+  }
+  .topbar .sub {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    margin-top: 0.15rem;
+  }
+
+  /* ---- Main scroll area ---- */
+  main {
+    flex: 1;
+    padding: 0.25rem 1.25rem 6.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px var(--shadow);
+    padding: 1.1rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    animation: rise 0.35s ease both;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .card-head h2 {
+    font-size: 1.05rem;
+  }
+  .card-head .hint {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+  }
+
+  /* ---- Section divider (time-of-day) ---- */
+  .phase-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.4rem 0.1rem -0.2rem;
+    color: var(--ink-faint);
+  }
+  .phase-label .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .phase-label span.txt {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .phase-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 11px;
+    padding: 0.65rem 1rem;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { opacity: 0.92; }
+  .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .btn-danger { background: transparent; color: var(--caution); border: 1px solid var(--caution-soft); }
+  .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.8rem; border-radius: 9px; }
+  .btn-icon {
+    width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    padding: 0; background: var(--accent); color: var(--accent-ink);
+  }
+  .btn-block { width: 100%; }
+  .icon { width: 1.05em; height: 1.05em; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* ---- Client chip row ---- */
+  .chip-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.15rem 0.05rem 0.4rem;
+    margin: 0 -0.05rem;
+    scrollbar-width: none;
+  }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    min-width: 5.4rem;
+  }
+  .chip .name { font-weight: 700; font-size: 0.92rem; }
+  .chip .age { font-size: 0.72rem; color: var(--ink-faint); font-family: var(--font-mono); }
+  .chip.active { border-color: var(--accent); background: var(--accent-soft); }
+  .chip.active .name { color: var(--accent-soft-ink); }
+  .chip.active .age { color: var(--accent-soft-ink); opacity: 0.75; }
+
+  /* ---- Rows / checklist items ---- */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.15rem 0;
+  }
+  .row + .row { border-top: 1px solid var(--border-soft); padding-top: 0.6rem; margin-top: -0.05rem; }
+  .row .label { flex: 1; font-size: 0.94rem; }
+  .row .label .desc { display: block; font-size: 0.78rem; color: var(--ink-faint); margin-top: 0.1rem; }
+
+  .check {
+    width: 1.5rem; height: 1.5rem; border-radius: 8px;
+    border: 1.6px solid var(--border);
+    background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .check.on { background: var(--success); border-color: var(--success); }
+  .check.on .icon { stroke: var(--accent-ink); width: 0.95rem; height: 0.95rem; }
+  .check .icon { display: none; }
+  .check.on .icon { display: block; }
+
+  /* ---- Segmented control ---- */
+  .segmented {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .seg-btn {
+    flex: 1;
+    min-width: 5.2rem;
+    text-align: center;
+    padding: 0.5rem 0.6rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .seg-btn.on-neutral { background: var(--neutral-pill-soft); border-color: var(--neutral-pill); color: var(--ink); }
+  .seg-btn.on-success { background: var(--success-soft); border-color: var(--success); color: var(--success); }
+  .seg-btn.on-caution { background: var(--caution-soft); border-color: var(--caution); color: var(--caution); }
+
+  /* ---- Goal rows ---- */
+  .goal-row { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.65rem 0; }
+  .goal-row + .goal-row { border-top: 1px solid var(--border-soft); }
+  .goal-row .goal-text { font-size: 0.94rem; font-weight: 600; }
+
+  /* ---- Inputs ---- */
+  textarea, .text-input {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 0.65rem 0.75rem;
+    color: var(--ink);
+    font-size: 0.92rem;
+    resize: vertical;
+  }
+  textarea::placeholder, .text-input::placeholder { color: var(--ink-faint); }
+  .field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .field label { font-size: 0.78rem; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono); }
+  .field .note { font-size: 0.78rem; color: var(--ink-faint); }
+
+  .personal-note-card { border-color: var(--border); }
+  .personal-note-card .card-head .hint { color: var(--caution); }
+
+  /* ---- Schedule list ---- */
+  .sched-item { display: flex; align-items: center; gap: 0.6rem; }
+  .sched-item .text { flex: 1; font-size: 0.92rem; }
+  .sched-item .text.done { text-decoration: line-through; color: var(--ink-faint); }
+  .add-row { display: flex; gap: 0.5rem; margin-top: 0.15rem; }
+  .add-row input { flex: 1; }
+
+  /* ---- Empty state ---- */
+  .empty {
+    text-align: center;
+    padding: 2.5rem 1.25rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+    color: var(--ink-muted);
+  }
+  .empty .icon { width: 2.6rem; height: 2.6rem; stroke: var(--ink-faint); stroke-width: 1.3; }
+  .empty h2 { font-size: 1.15rem; color: var(--ink); }
+  .empty p { font-size: 0.88rem; max-width: 22rem; line-height: 1.5; }
+
+  /* ---- Banner ---- */
+  .banner {
+    background: var(--accent-soft);
+    color: var(--accent-soft-ink);
+    border-radius: 13px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    line-height: 1.4;
+  }
+  .banner button { margin-left: auto; background: none; border: none; color: inherit; font-weight: 700; cursor: pointer; font-size: 0.78rem; text-decoration: underline; flex-shrink: 0; }
+
+  /* ---- Client list ---- */
+  .client-list { display: flex; flex-direction: column; }
+  .client-item {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.8rem 0.1rem;
+    cursor: pointer;
+  }
+  .client-item + .client-item { border-top: 1px solid var(--border-soft); }
+  .avatar {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-soft-ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .client-item .meta { flex: 1; min-width: 0; }
+  .client-item .meta .n { font-weight: 700; font-size: 0.98rem; }
+  .client-item .meta .d { font-size: 0.78rem; color: var(--ink-faint); font-family: var(--font-mono); }
+  .section-label {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0.2rem 0 -0.3rem 0.1rem;
+  }
+
+  /* ---- History ---- */
+  .history-date-group { display: flex; flex-direction: column; gap: 0.6rem; }
+  .history-date-group .date-h {
+    font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+  .history-entry { cursor: pointer; }
+  .history-entry .summary-line { display: flex; gap: 0.4rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--ink-muted); }
+  .pill-mini {
+    font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px;
+    font-family: var(--font-mono);
+  }
+  .pill-mini.success { background: var(--success-soft); color: var(--success); }
+  .pill-mini.caution { background: var(--caution-soft); color: var(--caution); }
+  .pill-mini.neutral { background: var(--neutral-pill-soft); color: var(--neutral-pill); }
+
+  /* ---- Bottom nav ---- */
+  nav.tabbar {
+    position: sticky;
+    bottom: 0;
+    left: 0; right: 0;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    padding: 0.5rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom));
+    gap: 0.25rem;
+  }
+  .tab-btn {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    background: none; border: none; cursor: pointer;
+    padding: 0.35rem 0.2rem;
+    color: var(--ink-faint);
+    border-radius: 10px;
+    transition: color 0.15s ease;
+  }
+  .tab-btn .icon { width: 1.35rem; height: 1.35rem; }
+  .tab-btn span.lbl { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; }
+  .tab-btn.active { color: var(--accent); }
+
+  /* ---- Sheet / modal ---- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(10, 14, 11, 0.42);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 40;
+    animation: fade 0.18s ease both;
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .sheet {
+    width: 100%; max-width: 30rem;
+    background: var(--paper);
+    border-radius: 20px 20px 0 0;
+    padding: 0.6rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 1rem;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 -8px 30px var(--shadow-lg);
+    animation: sheetup 0.22s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes sheetup { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .sheet .handle { width: 2.4rem; height: 4px; border-radius: 999px; background: var(--border); margin: 0.3rem auto 0; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; }
+  .sheet-head h2 { font-size: 1.2rem; }
+  .sheet-close { background: none; border: none; color: var(--ink-faint); cursor: pointer; padding: 0.3rem; }
+  .sheet-actions { display: flex; gap: 0.6rem; margin-top: 0.2rem; }
+  .sheet-actions .btn { flex: 1; }
+
+  .goal-manage-row { display: flex; align-items: center; gap: 0.5rem; }
+  .goal-manage-row .text-input { flex: 1; }
+  .icon-x { color: var(--ink-faint); background: none; border: none; cursor: pointer; padding: 0.3rem; }
+
+  .divider { height: 1px; background: var(--border-soft); border: none; margin: 0.2rem 0; }
+</style>
+
+<div id="app">
+  <header class="topbar">
+    <span class="eyebrow" id="eyebrow-date"></span>
+    <h1 id="greeting">Daybook</h1>
+    <p class="sub" id="subhead">Your shift, organized.</p>
+  </header>
+  <main id="view"></main>
+  <nav class="tabbar">
+    <button class="tab-btn" data-tab="today" aria-label="Today">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M8 3v4M16 3v4M4 10h16"></path><path d="M8.5 14.5l2 2 4-4"></path></svg>
+      <span class="lbl">Today</span>
+    </button>
+    <button class="tab-btn" data-tab="clients" aria-label="Clients">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><circle cx="17" cy="8.5" r="2.4"></circle><path d="M15.3 13.8c2.6.2 4.7 2.3 4.7 5.2"></path></svg>
+      <span class="lbl">Clients</span>
+    </button>
+    <button class="tab-btn" data-tab="history" aria-label="History">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"></circle><path d="M12 7.5V12l3 2"></path></svg>
+      <span class="lbl">History</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var STORAGE_KEY = "daybook_v1";
+  var todayStr = new Date().toISOString().slice(0, 10);
+
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+
+  function seedState() {
+    var c1 = uid(), c2 = uid();
+    var g1 = uid(), g2 = uid(), g3 = uid(), g4 = uid();
+    return {
+      seeded: true,
+      clients: [
+        { id: c1, label: "M.R.", age: 11, status: "active", goals: [
+          { id: g1, text: "Brush teeth with one verbal prompt", status: "active" },
+          { id: g2, text: "Pour own drink without spilling", status: "active" }
+        ] },
+        { id: c2, label: "D.K.", age: 17, status: "active", goals: [
+          { id: g3, text: "Ride the bus route independently", status: "active" },
+          { id: g4, text: "Make a simple lunch unassisted", status: "active" }
+        ] }
+      ],
+      entries: [
+        { id: uid(), clientId: c1, date: todayStr,
+          hygiene: true, breakfast: true, support: "prompted",
+          nap: false, lunch: false,
+          schedule: [ { id: uid(), text: "Morning walk", done: true }, { id: uid(), text: "Art time", done: false } ],
+          goalOutcomes: (function(){ var o = {}; o[g1] = "accomplished"; return o; })(),
+          fun: "Kicked a soccer ball around after the walk.",
+          note: "",
+          updatedAt: Date.now()
+        }
+      ],
+      currentClientId: c1,
+      currentTab: "today"
+    };
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return seedState();
+      var s = JSON.parse(raw);
+      if (!s.clients) return seedState();
+      return s;
+    } catch (e) { return seedState(); }
+  }
+
+  var state = loadState();
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function esc(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function activeClients() { return state.clients.filter(function (c) { return c.status === "active"; }); }
+  function archivedClients() { return state.clients.filter(function (c) { return c.status === "archived"; }); }
+  function clientById(id) { return state.clients.filter(function (c) { return c.id === id; })[0] || null; }
+
+  function findEntry(clientId, date) {
+    return state.entries.filter(function (e) { return e.clientId === clientId && e.date === date; })[0] || null;
+  }
+  function ensureEntry(clientId, date) {
+    var e = findEntry(clientId, date);
+    if (e) return e;
+    e = { id: uid(), clientId: clientId, date: date, hygiene: false, breakfast: false, support: null,
+      nap: false, lunch: false, schedule: [], goalOutcomes: {}, fun: "", note: "", updatedAt: Date.now() };
+    state.entries.push(e);
+    return e;
+  }
+
+  var ICONS = {
+    check: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>',
+    plus: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>',
+    x: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
+    trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M9 7V4.8c0-.4.4-.8.9-.8h4.2c.5 0 .9.4.9.8V7"></path><path d="M6 7l.8 12.2c0 .9.8 1.6 1.7 1.6h6.9c.9 0 1.7-.7 1.7-1.6L18 7"></path></svg>',
+    archive: '<svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4.2" rx="1.2"></rect><path d="M5 8.7V18a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 18V8.7"></path><path d="M10 13h4"></path></svg>',
+    empty: '<svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"></path><circle cx="17" cy="8.5" r="2.4"></circle><path d="M15.3 13.8c2.6.2 4.7 2.3 4.7 5.2"></path></svg>',
+    clock: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"></circle><path d="M12 7.5V12l3 2"></path></svg>',
+    chevron: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>'
+  };
+
+  function greeting() {
+    var h = new Date().getHours();
+    if (h < 5) return "Still on shift";
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  }
+  function formattedDate(d) {
+    var dt = d ? new Date(d + "T12:00:00") : new Date();
+    return dt.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+
+  function renderTopbar() {
+    document.getElementById("eyebrow-date").textContent = formattedDate();
+    document.getElementById("greeting").textContent = greeting();
+    var subs = { today: "Log today's shift, one section at a time.", clients: "Your caseload — add, edit, or archive.", history: "What actually happened, by day." };
+    document.getElementById("subhead").textContent = subs[state.currentTab];
+  }
+
+  /* ---------------- TODAY ---------------- */
+  function renderToday() {
+    var el = document.getElementById("view");
+    var clients = activeClients();
+    if (clients.length === 0) {
+      el.innerHTML =
+        '<div class="card empty">' + ICONS.empty +
+        '<h2>No clients yet</h2>' +
+        '<p>Add someone to your caseload from the Clients tab to start logging a shift.</p>' +
+        '<button class="btn btn-primary" data-action="go-clients">' + ICONS.plus + ' Add a client</button>' +
+        '</div>';
+      return;
+    }
+    if (!clientById(state.currentClientId) || clientById(state.currentClientId).status !== "active") {
+      state.currentClientId = clients[0].id;
+    }
+    var entry = ensureEntry(state.currentClientId, todayStr);
+
+    var chips = clients.map(function (c) {
+      return '<button class="chip' + (c.id === state.currentClientId ? " active" : "") + '" data-action="pick-client" data-id="' + c.id + '">' +
+        '<span class="name">' + esc(c.label) + '</span><span class="age">age ' + c.age + '</span></button>';
+    }).join("");
+
+    var seedBanner = state.seeded ?
+      '<div class="banner">' + ICONS.check + ' This is sample data so you can see how it looks. Clear it anytime from the Clients tab.<button data-action="dismiss-seed">Got it</button></div>' : "";
+
+    var supportOptions = ["independent", "prompted", "hands-on"];
+    var supportLabels = { independent: "Independent", prompted: "Prompted", "hands-on": "Hands-on" };
+    var supportSeg = supportOptions.map(function (opt) {
+      var on = entry.support === opt;
+      return '<button class="seg-btn' + (on ? " on-neutral" : "") + '" data-action="set-support" data-val="' + opt + '">' + supportLabels[opt] + '</button>';
+    }).join("");
+
+    var goals = clientById(state.currentClientId).goals.filter(function (g) { return g.status === "active"; });
+    var goalRows = goals.length ? goals.map(function (g) {
+      var val = entry.goalOutcomes[g.id];
+      function seg(key, label, cls) {
+        return '<button class="seg-btn' + (val === key ? " " + cls : "") + '" data-action="set-goal" data-gid="' + g.id + '" data-val="' + key + '">' + label + '</button>';
+      }
+      return '<div class="goal-row"><p class="goal-text">' + esc(g.text) + '</p>' +
+        '<div class="segmented">' + seg("accomplished", "Accomplished", "on-success") + seg("declined", "Declined", "on-caution") + seg("not-attempted", "Not attempted", "on-neutral") + '</div></div>';
+    }).join("") : '<p class="note">No goals set for this client yet — add some from the Clients tab.</p>';
+
+    var schedItems = entry.schedule.map(function (s) {
+      return '<div class="sched-item"><div class="check' + (s.done ? " on" : "") + '" data-action="toggle-sched" data-id="' + s.id + '">' + ICONS.check + '</div>' +
+        '<span class="text' + (s.done ? " done" : "") + '">' + esc(s.text) + '</span>' +
+        '<button class="icon-x" data-action="remove-sched" data-id="' + s.id + '">' + ICONS.x + '</button></div>';
+    }).join("");
+
+    el.innerHTML =
+      seedBanner +
+      '<div class="chip-row">' + chips + '</div>' +
+
+      '<div class="phase-label">' + ICONS.check.replace('class="icon"', 'class="icon" style="width:.85rem;height:.85rem"') + '<span class="txt">Morning</span></div>' +
+      '<div class="card">' +
+        '<div class="row"><div class="check' + (entry.hygiene ? " on" : "") + '" data-action="toggle" data-field="hygiene">' + ICONS.check + '</div><div class="label">Hygiene routine complete</div></div>' +
+        '<div class="row"><div class="check' + (entry.breakfast ? " on" : "") + '" data-action="toggle" data-field="breakfast">' + ICONS.check + '</div><div class="label">Breakfast eaten</div></div>' +
+        '<div class="field"><label>Support level</label><div class="segmented">' + supportSeg + '</div></div>' +
+      '</div>' +
+
+      '<div class="phase-label"><span class="txt">Day plan</span></div>' +
+      '<div class="card">' +
+        '<div class="card-head"><h2>Today’s schedule</h2><span class="hint">' + entry.schedule.filter(function(s){return s.done;}).length + '/' + entry.schedule.length + '</span></div>' +
+        (schedItems || '<p class="note">Nothing planned yet — add the first item below.</p>') +
+        '<div class="add-row"><input class="text-input" id="sched-input" placeholder="Add a schedule item…" /><button class="btn btn-primary btn-sm" data-action="add-sched">' + ICONS.plus + '</button></div>' +
+      '</div>' +
+
+      '<div class="phase-label"><span class="txt">Midday</span></div>' +
+      '<div class="card">' +
+        '<div class="row"><div class="check' + (entry.nap ? " on" : "") + '" data-action="toggle" data-field="nap">' + ICONS.check + '</div><div class="label">Rested / napped</div></div>' +
+        '<div class="row"><div class="check' + (entry.lunch ? " on" : "") + '" data-action="toggle" data-field="lunch">' + ICONS.check + '</div><div class="label">Lunch eaten</div></div>' +
+      '</div>' +
+
+      '<div class="phase-label"><span class="txt">Goals worked on today</span></div>' +
+      '<div class="card">' + goalRows + '</div>' +
+
+      '<div class="phase-label"><span class="txt">Wrap-up</span></div>' +
+      '<div class="card">' +
+        '<div class="field"><label>Fun / activities</label><textarea rows="2" data-action="edit-fun" placeholder="What did the day include outside of goals?">' + esc(entry.fun) + '</textarea></div>' +
+      '</div>' +
+      '<div class="card personal-note-card">' +
+        '<div class="card-head"><h2>Personal notes</h2><span class="hint">for you only</span></div>' +
+        '<p class="note">A private memory-jogger for writing your real shift/behavior report — not a substitute for it.</p>' +
+        '<textarea rows="3" data-action="edit-note" placeholder="Anything you want to remember when you write the official notes…">' + esc(entry.note) + '</textarea>' +
+      '</div>';
+  }
+
+  function todayEvents(target) {
+    var action = target.getAttribute("data-action");
+    if (!action) return false;
+    var entry = ensureEntry(state.currentClientId, todayStr);
+    if (action === "go-clients") { setTab("clients"); return true; }
+    if (action === "dismiss-seed") { state.seeded = false; save(); renderToday(); return true; }
+    if (action === "pick-client") { state.currentClientId = target.getAttribute("data-id"); save(); renderToday(); return true; }
+    if (action === "toggle") { var f = target.getAttribute("data-field"); entry[f] = !entry[f]; save(); renderToday(); return true; }
+    if (action === "set-support") { entry.support = target.getAttribute("data-val"); save(); renderToday(); return true; }
+    if (action === "set-goal") {
+      var gid = target.getAttribute("data-gid"), val = target.getAttribute("data-val");
+      entry.goalOutcomes[gid] = entry.goalOutcomes[gid] === val ? undefined : val;
+      save(); renderToday(); return true;
+    }
+    if (action === "toggle-sched") {
+      var id = target.getAttribute("data-id");
+      entry.schedule.forEach(function (s) { if (s.id === id) s.done = !s.done; });
+      save(); renderToday(); return true;
+    }
+    if (action === "remove-sched") {
+      var rid = target.getAttribute("data-id");
+      entry.schedule = entry.schedule.filter(function (s) { return s.id !== rid; });
+      save(); renderToday(); return true;
+    }
+    if (action === "add-sched") {
+      var input = document.getElementById("sched-input");
+      var val2 = input.value.trim();
+      if (val2) { entry.schedule.push({ id: uid(), text: val2, done: false }); save(); renderToday(); }
+      return true;
+    }
+    return false;
+  }
+
+  /* ---------------- CLIENTS ---------------- */
+  function initials(label) {
+    var letters = String(label || "").replace(/[^a-zA-Z]/g, "");
+    return esc((letters || label || "?").slice(0, 2).toUpperCase());
+  }
+
+  function renderClients() {
+    var el = document.getElementById("view");
+    var act = activeClients(), arch = archivedClients();
+    function row(c) {
+      return '<div class="client-item" data-action="open-client" data-id="' + c.id + '">' +
+        '<div class="avatar">' + initials(c.label) + '</div>' +
+        '<div class="meta"><div class="n">' + esc(c.label) + '</div><div class="d">age ' + c.age + ' · ' + c.goals.filter(function(g){return g.status==='active';}).length + ' active goal' + (c.goals.length === 1 ? "" : "s") + '</div></div>' +
+        ICONS.chevron.replace('class="icon"', 'class="icon" style="transform:rotate(-90deg);color:var(--ink-faint)"') +
+        '</div>';
+    }
+    var html = '<div class="card"><button class="btn btn-primary btn-block" data-action="new-client">' + ICONS.plus + ' Add a client</button></div>';
+    if (act.length) {
+      html += '<div class="section-label">Active caseload</div><div class="card client-list">' + act.map(row).join("") + '</div>';
+    } else {
+      html += '<div class="card empty">' + ICONS.empty + '<h2>Your caseload is empty</h2><p>Add the people you work with to start logging shifts for them.</p></div>';
+    }
+    if (arch.length) {
+      html += '<div class="section-label">Archived</div><div class="card client-list">' + arch.map(row).join("") + '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function clientEvents(target) {
+    var action = target.getAttribute("data-action");
+    if (!action) return false;
+    if (action === "new-client") { openClientSheet(null); return true; }
+    if (action === "open-client") { openClientSheet(target.getAttribute("data-id")); return true; }
+    return false;
+  }
+
+  /* ---- Client sheet ---- */
+  function openClientSheet(clientId) {
+    var isNew = !clientId;
+    var c = isNew ? { id: null, label: "", age: "", status: "active", goals: [] } : clientById(clientId);
+    var draftGoals = c.goals.slice();
+
+    function goalRowsHtml() {
+      return draftGoals.filter(function(g){return g.status === 'active';}).map(function (g) {
+        return '<div class="goal-manage-row" data-gid="' + g.id + '">' +
+          '<input class="text-input goal-edit" value="' + esc(g.text) + '" data-gid="' + g.id + '" />' +
+          '<button class="icon-x" data-action="remove-goal" data-gid="' + g.id + '">' + ICONS.x + '</button></div>';
+      }).join("") || '<p class="note">No goals yet. Add the ones the behavior specialist has assigned.</p>';
+    }
+
+    var scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.innerHTML =
+      '<div class="sheet">' +
+        '<div class="handle"></div>' +
+        '<div class="sheet-head"><h2>' + (isNew ? "Add client" : "Edit client") + '</h2><button class="sheet-close" data-action="close">' + ICONS.x + '</button></div>' +
+        '<div class="field"><label>Initials or label</label><input class="text-input" id="c-label" placeholder="e.g. J.T." value="' + esc(c.label) + '" /><span class="note">Use initials, not full names — this stays on your device only.</span></div>' +
+        '<div class="field"><label>Age</label><input class="text-input" id="c-age" type="number" min="0" max="99" placeholder="e.g. 14" value="' + esc(c.age) + '" /></div>' +
+        '<hr class="divider" />' +
+        '<div class="field"><label>Goals</label><div id="goal-list">' + goalRowsHtml() + '</div>' +
+          '<div class="add-row"><input class="text-input" id="new-goal-input" placeholder="Add a goal…" /><button class="btn btn-primary btn-sm" data-action="add-goal">' + ICONS.plus + '</button></div>' +
+        '</div>' +
+        (isNew ? "" :
+          '<hr class="divider" />' +
+          '<div class="sheet-actions">' +
+            '<button class="btn btn-ghost" data-action="archive-toggle">' + ICONS.archive + (c.status === "archived" ? " Restore" : " Archive") + '</button>' +
+            '<button class="btn btn-danger" data-action="delete-client">' + ICONS.trash + ' Delete</button>' +
+          '</div>'
+        ) +
+        '<button class="btn btn-primary btn-block" data-action="save-client">Save</button>' +
+      '</div>';
+    document.body.appendChild(scrim);
+
+    scrim.addEventListener("click", function (e) {
+      var t = e.target.closest("[data-action]");
+      if (e.target === scrim || (t && t.getAttribute("data-action") === "close")) { scrim.remove(); return; }
+      if (!t) return;
+      var act = t.getAttribute("data-action");
+      if (act === "add-goal") {
+        var inp = document.getElementById("new-goal-input");
+        var v = inp.value.trim();
+        if (v) { draftGoals.push({ id: uid(), text: v, status: "active" }); inp.value = ""; document.getElementById("goal-list").innerHTML = goalRowsHtml(); }
+      }
+      if (act === "remove-goal") {
+        var gid = t.getAttribute("data-gid");
+        draftGoals = draftGoals.map(function (g) { return g.id === gid ? Object.assign({}, g, { status: "retired" }) : g; });
+        document.getElementById("goal-list").innerHTML = goalRowsHtml();
+      }
+      if (act === "archive-toggle") {
+        c.status = c.status === "archived" ? "active" : "archived";
+        save(); scrim.remove(); renderClients();
+      }
+      if (act === "delete-client") {
+        if (confirm("Delete this client and all their logged shifts? This can’t be undone.")) {
+          state.clients = state.clients.filter(function (x) { return x.id !== c.id; });
+          state.entries = state.entries.filter(function (x) { return x.clientId !== c.id; });
+          save(); scrim.remove(); renderClients();
+        }
+      }
+      if (act === "save-client") {
+        var labelVal = document.getElementById("c-label").value.trim();
+        var ageVal = parseInt(document.getElementById("c-age").value, 10);
+        if (!labelVal) { document.getElementById("c-label").focus(); return; }
+        document.querySelectorAll(".goal-edit").forEach(function (inp2) {
+          var gid2 = inp2.getAttribute("data-gid");
+          draftGoals = draftGoals.map(function (g) { return g.id === gid2 ? Object.assign({}, g, { text: inp2.value.trim() || g.text }) : g; });
+        });
+        if (isNew) {
+          state.clients.push({ id: uid(), label: labelVal, age: isNaN(ageVal) ? 0 : ageVal, status: "active", goals: draftGoals });
+        } else {
+          c.label = labelVal; c.age = isNaN(ageVal) ? 0 : ageVal; c.goals = draftGoals;
+        }
+        save(); scrim.remove(); renderClients();
+      }
+    });
+  }
+
+  /* ---------------- HISTORY ---------------- */
+  function renderHistory() {
+    var el = document.getElementById("view");
+    if (state.entries.length === 0) {
+      el.innerHTML = '<div class="card empty">' + ICONS.clock + '<h2>Nothing logged yet</h2><p>Entries you save on the Today tab will show up here, grouped by day.</p></div>';
+      return;
+    }
+    var byDate = {};
+    state.entries.slice().sort(function (a, b) { return b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt; })
+      .forEach(function (e) { (byDate[e.date] = byDate[e.date] || []).push(e); });
+
+    var html = "";
+    Object.keys(byDate).sort().reverse().forEach(function (date) {
+      var rows = byDate[date].map(function (e) {
+        var c = clientById(e.clientId);
+        if (!c) return "";
+        var counts = { accomplished: 0, declined: 0, "not-attempted": 0 };
+        Object.keys(e.goalOutcomes).forEach(function (k) { var v = e.goalOutcomes[k]; if (v && counts[v] !== undefined) counts[v]++; });
+        return '<div class="row history-entry" data-action="view-entry" data-id="' + e.id + '">' +
+          '<div class="avatar" style="width:2.2rem;height:2.2rem;font-size:.82rem">' + initials(c.label) + '</div>' +
+          '<div class="label"><strong>' + esc(c.label) + '</strong>' +
+            '<div class="summary-line">' +
+            (counts.accomplished ? '<span class="pill-mini success">' + counts.accomplished + ' accomplished</span>' : "") +
+            (counts.declined ? '<span class="pill-mini caution">' + counts.declined + ' declined</span>' : "") +
+            (counts["not-attempted"] ? '<span class="pill-mini neutral">' + counts["not-attempted"] + ' not attempted</span>' : "") +
+            (!counts.accomplished && !counts.declined && !counts["not-attempted"] ? '<span class="pill-mini neutral">routine only</span>' : "") +
+            '</div></div>' +
+          ICONS.chevron.replace('class="icon"', 'class="icon" style="transform:rotate(-90deg);color:var(--ink-faint)"') +
+        '</div>';
+      }).join("");
+      html += '<div class="history-date-group"><div class="date-h">' + formattedDate(date) + '</div><div class="card client-list">' + rows + '</div></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function historyEvents(target) {
+    var action = target.getAttribute("data-action");
+    if (action === "view-entry") { openEntrySheet(target.getAttribute("data-id")); return true; }
+    return false;
+  }
+
+  function openEntrySheet(entryId) {
+    var e = state.entries.filter(function (x) { return x.id === entryId; })[0];
+    if (!e) return;
+    var c = clientById(e.clientId);
+    var supportLabels = { independent: "Independent", prompted: "Prompted", "hands-on": "Hands-on" };
+    var goalLines = (c ? c.goals : []).map(function (g) {
+      var v = e.goalOutcomes[g.id];
+      if (!v) return "";
+      var cls = v === "accomplished" ? "success" : v === "declined" ? "caution" : "neutral";
+      var lbl = v === "accomplished" ? "Accomplished" : v === "declined" ? "Declined" : "Not attempted";
+      return '<div class="goal-row"><p class="goal-text">' + esc(g.text) + '</p><span class="pill-mini ' + cls + '" style="align-self:flex-start">' + lbl + '</span></div>';
+    }).join("");
+    var scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.innerHTML =
+      '<div class="sheet">' +
+        '<div class="handle"></div>' +
+        '<div class="sheet-head"><h2>' + esc(c ? c.label : "Client") + ' — ' + formattedDate(e.date) + '</h2><button class="sheet-close" data-action="close">' + ICONS.x + '</button></div>' +
+        '<div class="field"><label>Morning</label><p class="note">Hygiene: ' + (e.hygiene ? "done" : "not marked") + ' · Breakfast: ' + (e.breakfast ? "done" : "not marked") + (e.support ? " · Support: " + supportLabels[e.support] : "") + '</p></div>' +
+        (e.schedule.length ? '<div class="field"><label>Schedule</label><p class="note">' + e.schedule.map(function(s){return (s.done ? "✓ " : "• ") + esc(s.text);}).join("<br/>") + '</p></div>' : "") +
+        '<div class="field"><label>Midday</label><p class="note">Rest: ' + (e.nap ? "yes" : "not marked") + ' · Lunch: ' + (e.lunch ? "eaten" : "not marked") + '</p></div>' +
+        (goalLines ? '<div class="field"><label>Goals</label>' + goalLines + '</div>' : "") +
+        (e.fun ? '<div class="field"><label>Fun / activities</label><p class="note">' + esc(e.fun) + '</p></div>' : "") +
+        (e.note ? '<div class="field"><label>Personal notes</label><p class="note">' + esc(e.note) + '</p></div>' : "") +
+      '</div>';
+    document.body.appendChild(scrim);
+    scrim.addEventListener("click", function (ev) {
+      var t = ev.target.closest("[data-action]");
+      if (ev.target === scrim || (t && t.getAttribute("data-action") === "close")) scrim.remove();
+    });
+  }
+
+  /* ---------------- Tabs / render dispatch ---------------- */
+  function setTab(tab) {
+    state.currentTab = tab;
+    save();
+    document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-tab") === tab); });
+    renderTopbar();
+    if (tab === "today") renderToday();
+    else if (tab === "clients") renderClients();
+    else renderHistory();
+  }
+
+  document.querySelectorAll(".tab-btn").forEach(function (b) {
+    b.addEventListener("click", function () { setTab(b.getAttribute("data-tab")); });
+  });
+
+  document.getElementById("view").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-action]");
+    if (!t) return;
+    if (state.currentTab === "today" && todayEvents(t)) return;
+    if (state.currentTab === "clients" && clientEvents(t)) return;
+    if (state.currentTab === "history" && historyEvents(t)) return;
+  });
+
+  document.getElementById("view").addEventListener("input", function (e) {
+    if (state.currentTab !== "today") return;
+    var t = e.target;
+    var action = t.getAttribute("data-action");
+    if (!action) return;
+    var entry = ensureEntry(state.currentClientId, todayStr);
+    if (action === "edit-fun") entry.fun = t.value;
+    if (action === "edit-note") entry.note = t.value;
+    save();
+  });
+
+  setTab(state.currentTab || "today");
+})();
+</script>
