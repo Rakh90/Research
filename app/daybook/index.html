@@ -528,6 +528,23 @@
   .trend-detail { font-size: 0.76rem; color: var(--ink-muted); }
   .trend-detail b { font-variant-numeric: tabular-nums; color: var(--ink); }
 
+  .view-toggle { display: flex; gap: 0.4rem; }
+  .view-toggle .seg-btn { flex: none; min-width: 6rem; }
+
+  .donut-wrap {
+    position: relative;
+    width: 12.5rem; height: 12.5rem;
+    margin: 0.5rem auto 0.25rem;
+  }
+  .donut-wrap canvas { width: 100%; height: 100%; display: block; }
+  .donut-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.1rem; pointer-events: none;
+  }
+  .donut-center .pct { font-family: var(--font-body); font-weight: 700; font-size: 2rem; line-height: 1; color: var(--ink); }
+  .donut-center .cap { font-size: 0.68rem; color: var(--ink-faint); font-family: var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+
   /* ---- Export sheet extras ---- */
   .export-toggle { cursor: pointer; }
   .export-preview {
@@ -1062,6 +1079,19 @@
         '<span class="legend-item"><span class="legend-swatch neutral"></span>Not attempted</span>' +
       '</div>';
 
+    var toggle =
+      '<div class="view-toggle">' +
+        '<button class="seg-btn' + (state.trendsView !== "chart" ? " on-neutral" : "") + '" data-action="set-trend-view" data-val="bars">Per-goal bars</button>' +
+        '<button class="seg-btn' + (state.trendsView === "chart" ? " on-neutral" : "") + '" data-action="set-trend-view" data-val="chart">Overall chart</button>' +
+      '</div>';
+
+    var pctAccomplished = grand ? Math.round((totals.accomplished / grand) * 100) : 0;
+    var chartView =
+      '<div class="donut-wrap"><canvas id="trend-donut" width="240" height="240"></canvas>' +
+        '<div class="donut-center"><span class="pct">' + pctAccomplished + '%</span><span class="cap">Accomplished</span></div>' +
+      '</div>' +
+      '<p class="note" style="text-align:center">Every logged goal outcome for ' + esc(client.label) + ', all-time — ' + grand + ' total.</p>';
+
     var goalRows = stats.length ? stats.map(function (s) {
       var n = s.accomplished + s.declined + s["not-attempted"];
       if (n === 0) {
@@ -1084,12 +1114,52 @@
       (grand === 0
         ? '<div class="card empty">' + ICONS.empty + '<h2>No outcomes logged yet</h2><p>Mark a goal accomplished, declined, or not attempted on the Today tab and it will show up here.</p></div>'
         : '<div class="card">' + statRow + '</div>' +
-          '<div class="card">' + legend + '<hr class="divider" />' + goalRows + '</div>');
+          '<div class="card">' + toggle + '<hr class="divider" />' + legend +
+            (state.trendsView === "chart" ? chartView : "<hr class=\"divider\" />" + goalRows) +
+          '</div>');
+
+    if (grand > 0 && state.trendsView === "chart") drawDonut(document.getElementById("trend-donut"), [
+      { value: totals.accomplished, varName: "--success" },
+      { value: totals.declined, varName: "--caution" },
+      { value: totals["not-attempted"], varName: "--neutral-pill" }
+    ]);
+  }
+
+  function drawDonut(canvas, segments) {
+    if (!canvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var size = canvas.width;
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    var cx = size / 2, cy = size / 2, rOuter = size / 2 - 4, rInner = rOuter * 0.62;
+    var total = segments.reduce(function (s, seg) { return s + seg.value; }, 0);
+    if (!total) return;
+    var gapRad = 2 / ((rOuter + rInner) / 2);
+    var start = -Math.PI / 2;
+    var styles = getComputedStyle(document.body);
+    segments.forEach(function (seg) {
+      if (seg.value <= 0) return;
+      var frac = seg.value / total;
+      var sweep = frac * Math.PI * 2;
+      var segStart = start + gapRad / 2;
+      var segEnd = start + sweep - gapRad / 2;
+      if (segEnd > segStart) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, rOuter, segStart, segEnd);
+        ctx.arc(cx, cy, rInner, segEnd, segStart, true);
+        ctx.closePath();
+        ctx.fillStyle = styles.getPropertyValue(seg.varName).trim();
+        ctx.fill();
+      }
+      start += sweep;
+    });
   }
 
   function trendsEvents(target) {
     var action = target.getAttribute("data-action");
     if (action === "pick-trend-client") { state.trendsClientId = target.getAttribute("data-id"); save(); renderTrends(); return true; }
+    if (action === "set-trend-view") { state.trendsView = target.getAttribute("data-val"); save(); renderTrends(); return true; }
     return false;
   }
 
