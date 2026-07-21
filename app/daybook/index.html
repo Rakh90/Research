@@ -19,7 +19,7 @@
     --success-soft: #dcebe3;
     --caution: #b5533c;
     --caution-soft: #f3dcd4;
-    --neutral-pill: #9b9186;
+    --neutral-pill: #645d52;
     --neutral-pill-soft: #eae6df;
     --shadow: rgba(32, 43, 34, 0.09);
     --shadow-lg: rgba(32, 43, 34, 0.16);
@@ -47,7 +47,7 @@
       --success-soft: #1d3227;
       --caution: #d07a5e;
       --caution-soft: #3a2019;
-      --neutral-pill: #8b8478;
+      --neutral-pill: #a19b89;
       --neutral-pill-soft: #262a22;
       --shadow: rgba(0, 0, 0, 0.35);
       --shadow-lg: rgba(0, 0, 0, 0.5);
@@ -497,6 +497,37 @@
 
   .divider { height: 1px; background: var(--border-soft); border: none; margin: 0.2rem 0; }
 
+  /* ---- Trends ---- */
+  .stat-row { display: flex; gap: 0.6rem; }
+  .stat-tile {
+    flex: 1; display: flex; flex-direction: column; gap: 0.2rem;
+    padding: 0.7rem 0.6rem; border-radius: 12px; background: var(--paper); border: 1px solid var(--border-soft);
+  }
+  .stat-tile .num { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .stat-tile .lbl { font-size: 0.72rem; color: var(--ink-muted); font-family: var(--font-mono); letter-spacing: 0.03em; }
+  .stat-tile.success .num { color: var(--success); }
+  .stat-tile.caution .num { color: var(--caution); }
+  .stat-tile.neutral .num { color: var(--neutral-pill); }
+
+  .legend-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--ink-muted); }
+  .legend-swatch { width: 0.6rem; height: 0.6rem; border-radius: 2px; flex-shrink: 0; }
+  .legend-swatch.success { background: var(--success); }
+  .legend-swatch.caution { background: var(--caution); }
+  .legend-swatch.neutral { background: var(--neutral-pill); }
+
+  .trend-goal { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.75rem 0; }
+  .trend-goal + .trend-goal { border-top: 1px solid var(--border-soft); }
+  .trend-goal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+  .trend-goal-head .t { font-size: 0.92rem; font-weight: 600; }
+  .trend-goal-head .n { font-size: 0.76rem; color: var(--ink-faint); font-family: var(--font-mono); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .trend-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--border-soft); gap: 2px; }
+  .trend-seg.success { background: var(--success); }
+  .trend-seg.caution { background: var(--caution); }
+  .trend-seg.neutral { background: var(--neutral-pill); }
+  .trend-detail { font-size: 0.76rem; color: var(--ink-muted); }
+  .trend-detail b { font-variant-numeric: tabular-nums; color: var(--ink); }
+
   /* ---- Export sheet extras ---- */
   .export-toggle { cursor: pointer; }
   .export-preview {
@@ -546,6 +577,10 @@
     <button class="tab-btn" data-tab="history" aria-label="History">
       <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"></circle><path d="M12 7.5V12l3 2"></path></svg>
       <span class="lbl">History</span>
+    </button>
+    <button class="tab-btn" data-tab="trends" aria-label="Trends">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"></path></svg>
+      <span class="lbl">Trends</span>
     </button>
   </nav>
 </div>
@@ -656,7 +691,7 @@
   function renderTopbar() {
     document.getElementById("eyebrow-date").textContent = formattedDate();
     document.getElementById("greeting").textContent = greeting();
-    var subs = { today: "Log today's shift, one section at a time.", clients: "Your caseload — add, edit, or archive.", history: "What actually happened, by day." };
+    var subs = { today: "Log today's shift, one section at a time.", clients: "Your caseload — add, edit, or archive.", history: "What actually happened, by day.", trends: "How goals are actually going." };
     document.getElementById("subhead").textContent = subs[state.currentTab];
   }
 
@@ -978,6 +1013,86 @@
     });
   }
 
+  /* ---------------- Trends ---------------- */
+  function goalStats(client) {
+    var counts = {};
+    client.goals.filter(function (g) { return g.status === "active"; }).forEach(function (g) {
+      counts[g.id] = { accomplished: 0, declined: 0, "not-attempted": 0, goal: g };
+    });
+    state.entries.filter(function (e) { return e.clientId === client.id; }).forEach(function (e) {
+      Object.keys(e.goalOutcomes).forEach(function (gid) {
+        var v = e.goalOutcomes[gid];
+        if (v && counts[gid]) counts[gid][v]++;
+      });
+    });
+    return Object.keys(counts).map(function (gid) { return counts[gid]; });
+  }
+
+  function renderTrends() {
+    var el = document.getElementById("view");
+    var clients = state.clients;
+    if (clients.length === 0) {
+      el.innerHTML = '<div class="card empty">' + ICONS.empty + '<h2>Nothing to show yet</h2><p>Add a client and log a few shifts, then come back to see how goals are trending.</p></div>';
+      return;
+    }
+    if (!clientById(state.trendsClientId)) state.trendsClientId = clients[0].id;
+    var client = clientById(state.trendsClientId);
+
+    var chips = clients.map(function (c) {
+      return '<button class="chip' + (c.id === state.trendsClientId ? " active" : "") + '" data-action="pick-trend-client" data-id="' + c.id + '">' +
+        '<span class="name">' + esc(c.label) + '</span><span class="age">age ' + c.age + '</span></button>';
+    }).join("");
+
+    var stats = goalStats(client);
+    var totals = { accomplished: 0, declined: 0, "not-attempted": 0 };
+    stats.forEach(function (s) { totals.accomplished += s.accomplished; totals.declined += s.declined; totals["not-attempted"] += s["not-attempted"]; });
+    var grand = totals.accomplished + totals.declined + totals["not-attempted"];
+
+    var statRow =
+      '<div class="stat-row">' +
+        '<div class="stat-tile success"><span class="num">' + totals.accomplished + '</span><span class="lbl">ACCOMPLISHED</span></div>' +
+        '<div class="stat-tile caution"><span class="num">' + totals.declined + '</span><span class="lbl">DECLINED</span></div>' +
+        '<div class="stat-tile neutral"><span class="num">' + totals["not-attempted"] + '</span><span class="lbl">NOT ATTEMPTED</span></div>' +
+      '</div>';
+
+    var legend =
+      '<div class="legend-row">' +
+        '<span class="legend-item"><span class="legend-swatch success"></span>Accomplished</span>' +
+        '<span class="legend-item"><span class="legend-swatch caution"></span>Declined</span>' +
+        '<span class="legend-item"><span class="legend-swatch neutral"></span>Not attempted</span>' +
+      '</div>';
+
+    var goalRows = stats.length ? stats.map(function (s) {
+      var n = s.accomplished + s.declined + s["not-attempted"];
+      if (n === 0) {
+        return '<div class="trend-goal"><div class="trend-goal-head"><span class="t">' + esc(s.goal.text) + '</span><span class="n">not logged yet</span></div></div>';
+      }
+      var pa = (s.accomplished / n) * 100, pd = (s.declined / n) * 100, pn = (s["not-attempted"] / n) * 100;
+      return '<div class="trend-goal">' +
+        '<div class="trend-goal-head"><span class="t">' + esc(s.goal.text) + '</span><span class="n">' + n + ' logged</span></div>' +
+        '<div class="trend-bar">' +
+          (pa ? '<div class="trend-seg success" style="flex:' + pa + '"></div>' : "") +
+          (pd ? '<div class="trend-seg caution" style="flex:' + pd + '"></div>' : "") +
+          (pn ? '<div class="trend-seg neutral" style="flex:' + pn + '"></div>' : "") +
+        '</div>' +
+        '<div class="trend-detail"><b>' + s.accomplished + '</b> accomplished · <b>' + s.declined + '</b> declined · <b>' + s["not-attempted"] + '</b> not attempted</div>' +
+      '</div>';
+    }).join("") : '<p class="note">No goals set for this client yet.</p>';
+
+    el.innerHTML =
+      '<div class="chip-row">' + chips + '</div>' +
+      (grand === 0
+        ? '<div class="card empty">' + ICONS.empty + '<h2>No outcomes logged yet</h2><p>Mark a goal accomplished, declined, or not attempted on the Today tab and it will show up here.</p></div>'
+        : '<div class="card">' + statRow + '</div>' +
+          '<div class="card">' + legend + '<hr class="divider" />' + goalRows + '</div>');
+  }
+
+  function trendsEvents(target) {
+    var action = target.getAttribute("data-action");
+    if (action === "pick-trend-client") { state.trendsClientId = target.getAttribute("data-id"); save(); renderTrends(); return true; }
+    return false;
+  }
+
   /* ---------------- Export / print ---------------- */
   var SUPPORT_LABELS = { independent: "Independent", prompted: "Prompted", "hands-on": "Hands-on" };
   function outcomeLabel(v) { return v === "accomplished" ? "Accomplished" : v === "declined" ? "Declined" : "Not attempted"; }
@@ -1103,7 +1218,8 @@
     renderTopbar();
     if (tab === "today") renderToday();
     else if (tab === "clients") renderClients();
-    else renderHistory();
+    else if (tab === "history") renderHistory();
+    else renderTrends();
   }
 
   document.querySelectorAll(".tab-btn").forEach(function (b) {
@@ -1116,6 +1232,7 @@
     if (state.currentTab === "today" && todayEvents(t)) return;
     if (state.currentTab === "clients" && clientEvents(t)) return;
     if (state.currentTab === "history" && historyEvents(t)) return;
+    if (state.currentTab === "trends" && trendsEvents(t)) return;
   });
 
   document.getElementById("view").addEventListener("input", function (e) {
