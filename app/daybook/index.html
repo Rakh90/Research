@@ -1,5 +1,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Daybook" />
+<meta name="theme-color" content="#eef0e8" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141c17" media="(prefers-color-scheme: dark)" />
 <title>Daybook — shift companion</title>
 <style>
   :root {
@@ -313,6 +318,11 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
     transition: background 0.15s ease, border-color 0.15s ease;
+    appearance: none; -webkit-appearance: none; padding: 0; font: inherit; color: inherit;
+  }
+  button.row {
+    appearance: none; -webkit-appearance: none; background: none; border: none;
+    text-align: left; font: inherit; color: inherit; width: 100%; cursor: pointer;
   }
   .check.on { background: var(--success); border-color: var(--success); }
   .check.on .icon { stroke: var(--accent-ink); width: 0.95rem; height: 0.95rem; }
@@ -608,7 +618,12 @@
 (function () {
   "use strict";
   var STORAGE_KEY = "daybook_v1";
-  var todayStr = new Date().toISOString().slice(0, 10);
+  function todayStr() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
 
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
 
@@ -628,7 +643,7 @@
         ] }
       ],
       entries: [
-        { id: uid(), clientId: c1, date: todayStr,
+        { id: uid(), clientId: c1, date: todayStr(),
           hygiene: true, breakfast: true, support: "prompted",
           nap: false, lunch: false,
           schedule: [ { id: uid(), text: "Morning walk", done: true }, { id: uid(), text: "Art time", done: false } ],
@@ -728,7 +743,7 @@
     if (!clientById(state.currentClientId) || clientById(state.currentClientId).status !== "active") {
       state.currentClientId = clients[0].id;
     }
-    var entry = ensureEntry(state.currentClientId, todayStr);
+    var entry = ensureEntry(state.currentClientId, todayStr());
 
     var chips = clients.map(function (c) {
       return '<button class="chip' + (c.id === state.currentClientId ? " active" : "") + '" data-action="pick-client" data-id="' + c.id + '">' +
@@ -756,7 +771,7 @@
     }).join("") : '<p class="note">No goals set for this client yet — add some from the Clients tab.</p>';
 
     var schedItems = entry.schedule.map(function (s) {
-      return '<div class="sched-item"><div class="check' + (s.done ? " on" : "") + '" data-action="toggle-sched" data-id="' + s.id + '">' + ICONS.check + '</div>' +
+      return '<div class="sched-item"><button type="button" class="check' + (s.done ? " on" : "") + '" data-action="toggle-sched" data-id="' + s.id + '" aria-label="Mark schedule item done">' + ICONS.check + '</button>' +
         '<span class="text' + (s.done ? " done" : "") + '">' + esc(s.text) + '</span>' +
         '<button class="icon-x" data-action="remove-sched" data-id="' + s.id + '">' + ICONS.x + '</button></div>';
     }).join("");
@@ -767,8 +782,8 @@
 
       '<div class="phase-label">' + ICONS.check.replace('class="icon"', 'class="icon" style="width:.85rem;height:.85rem"') + '<span class="txt">Morning</span></div>' +
       '<div class="card">' +
-        '<div class="row"><div class="check' + (entry.hygiene ? " on" : "") + '" data-action="toggle" data-field="hygiene">' + ICONS.check + '</div><div class="label">Hygiene routine complete</div></div>' +
-        '<div class="row"><div class="check' + (entry.breakfast ? " on" : "") + '" data-action="toggle" data-field="breakfast">' + ICONS.check + '</div><div class="label">Breakfast eaten</div></div>' +
+        '<div class="row"><button type="button" class="check' + (entry.hygiene ? " on" : "") + '" data-action="toggle" data-field="hygiene" aria-label="Hygiene routine complete">' + ICONS.check + '</button><div class="label">Hygiene routine complete</div></div>' +
+        '<div class="row"><button type="button" class="check' + (entry.breakfast ? " on" : "") + '" data-action="toggle" data-field="breakfast" aria-label="Breakfast eaten">' + ICONS.check + '</button><div class="label">Breakfast eaten</div></div>' +
         '<div class="field"><label>Support level</label><div class="segmented">' + supportSeg + '</div></div>' +
       '</div>' +
 
@@ -781,8 +796,8 @@
 
       '<div class="phase-label"><span class="txt">Midday</span></div>' +
       '<div class="card">' +
-        '<div class="row"><div class="check' + (entry.nap ? " on" : "") + '" data-action="toggle" data-field="nap">' + ICONS.check + '</div><div class="label">Rested / napped</div></div>' +
-        '<div class="row"><div class="check' + (entry.lunch ? " on" : "") + '" data-action="toggle" data-field="lunch">' + ICONS.check + '</div><div class="label">Lunch eaten</div></div>' +
+        '<div class="row"><button type="button" class="check' + (entry.nap ? " on" : "") + '" data-action="toggle" data-field="nap" aria-label="Rested or napped">' + ICONS.check + '</button><div class="label">Rested / napped</div></div>' +
+        '<div class="row"><button type="button" class="check' + (entry.lunch ? " on" : "") + '" data-action="toggle" data-field="lunch" aria-label="Lunch eaten">' + ICONS.check + '</button><div class="label">Lunch eaten</div></div>' +
       '</div>' +
 
       '<div class="phase-label"><span class="txt">Goals worked on today</span></div>' +
@@ -800,25 +815,45 @@
       '<button class="btn btn-ghost btn-block" data-action="export-today">' + ICONS.exp + ' Export this shift</button>';
   }
 
+  function focusSelectorFor(el) {
+    var parts = [];
+    ["data-action", "data-field", "data-id", "data-gid", "data-val"].forEach(function (attr) {
+      var v = el.getAttribute(attr);
+      if (v != null) parts.push("[" + attr + '="' + v.replace(/"/g, '\\"') + '"]');
+    });
+    return parts.join("");
+  }
+  function restoreFocus(sel) {
+    if (!sel) return;
+    var el = document.querySelector(sel);
+    if (el && el.focus) el.focus({ preventScroll: true });
+  }
+
   function todayEvents(target) {
     var action = target.getAttribute("data-action");
     if (!action) return false;
-    var entry = ensureEntry(state.currentClientId, todayStr);
     if (action === "go-clients") { setTab("clients"); return true; }
+    var entry = ensureEntry(state.currentClientId, todayStr());
     if (action === "export-today") { openExportSheet(entry.id); return true; }
     if (action === "dismiss-seed") { state.seeded = false; save(); renderToday(); return true; }
     if (action === "pick-client") { state.currentClientId = target.getAttribute("data-id"); save(); renderToday(); return true; }
-    if (action === "toggle") { var f = target.getAttribute("data-field"); entry[f] = !entry[f]; save(); renderToday(); return true; }
-    if (action === "set-support") { entry.support = target.getAttribute("data-val"); save(); renderToday(); return true; }
+    if (action === "toggle") {
+      var f = target.getAttribute("data-field"); entry[f] = !entry[f]; save();
+      var fs1 = focusSelectorFor(target); renderToday(); restoreFocus(fs1); return true;
+    }
+    if (action === "set-support") {
+      entry.support = target.getAttribute("data-val"); save();
+      var fs2 = focusSelectorFor(target); renderToday(); restoreFocus(fs2); return true;
+    }
     if (action === "set-goal") {
       var gid = target.getAttribute("data-gid"), val = target.getAttribute("data-val");
       entry.goalOutcomes[gid] = entry.goalOutcomes[gid] === val ? undefined : val;
-      save(); renderToday(); return true;
+      save(); var fs3 = focusSelectorFor(target); renderToday(); restoreFocus(fs3); return true;
     }
     if (action === "toggle-sched") {
       var id = target.getAttribute("data-id");
       entry.schedule.forEach(function (s) { if (s.id === id) s.done = !s.done; });
-      save(); renderToday(); return true;
+      save(); var fs4 = focusSelectorFor(target); renderToday(); restoreFocus(fs4); return true;
     }
     if (action === "remove-sched") {
       var rid = target.getAttribute("data-id");
@@ -844,9 +879,10 @@
     var el = document.getElementById("view");
     var act = activeClients(), arch = archivedClients();
     function row(c) {
+      var activeGoalCount = c.goals.filter(function (g) { return g.status === "active"; }).length;
       return '<div class="client-item" data-action="open-client" data-id="' + c.id + '">' +
         '<div class="avatar">' + initials(c.label) + '</div>' +
-        '<div class="meta"><div class="n">' + esc(c.label) + '</div><div class="d">age ' + c.age + ' · ' + c.goals.filter(function(g){return g.status==='active';}).length + ' active goal' + (c.goals.length === 1 ? "" : "s") + '</div></div>' +
+        '<div class="meta"><div class="n">' + esc(c.label) + '</div><div class="d">age ' + c.age + ' · ' + activeGoalCount + ' active goal' + (activeGoalCount === 1 ? "" : "s") + '</div></div>' +
         ICONS.chevron.replace('class="icon"', 'class="icon" style="transform:rotate(-90deg);color:var(--ink-faint)"') +
         '</div>';
     }
@@ -859,6 +895,16 @@
     if (arch.length) {
       html += '<div class="section-label">Archived</div><div class="card client-list">' + arch.map(row).join("") + '</div>';
     }
+    html +=
+      '<div class="card">' +
+        '<div class="card-head"><h2>Backup &amp; restore</h2></div>' +
+        '<p class="note">Everything here lives only on this device — there is no account or sync. Download a backup regularly, and definitely before clearing browser data or switching phones.</p>' +
+        '<div class="sheet-actions">' +
+          '<button type="button" class="btn btn-ghost" data-action="export-all">Download backup</button>' +
+          '<button type="button" class="btn btn-ghost" data-action="import-all">Restore from file</button>' +
+        '</div>' +
+        '<input type="file" id="restore-file-input" accept="application/json" style="display:none" />' +
+      '</div>';
     el.innerHTML = html;
   }
 
@@ -867,7 +913,39 @@
     if (!action) return false;
     if (action === "new-client") { openClientSheet(null); return true; }
     if (action === "open-client") { openClientSheet(target.getAttribute("data-id")); return true; }
+    if (action === "export-all") { exportAllData(); return true; }
+    if (action === "import-all") { document.getElementById("restore-file-input").click(); return true; }
     return false;
+  }
+
+  function exportAllData() {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "daybook-backup-" + todayStr() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function importAllData(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed;
+      try { parsed = JSON.parse(reader.result); } catch (e) { alert("That file doesn’t look like a valid Daybook backup."); return; }
+      if (!parsed || !Array.isArray(parsed.clients) || !Array.isArray(parsed.entries)) {
+        alert("That file doesn’t look like a valid Daybook backup.");
+        return;
+      }
+      if (!confirm("Restoring will replace everything currently in Daybook on this device with this backup. This can’t be undone. Continue?")) return;
+      state = parsed;
+      state.currentTab = "clients";
+      save();
+      setTab("clients");
+    };
+    reader.readAsText(file);
   }
 
   /* ---- Client sheet ---- */
@@ -936,6 +1014,7 @@
       if (act === "save-client") {
         var labelVal = document.getElementById("c-label").value.trim();
         var ageVal = parseInt(document.getElementById("c-age").value, 10);
+        if (!isNaN(ageVal)) ageVal = Math.max(0, Math.min(99, ageVal));
         if (!labelVal) { document.getElementById("c-label").focus(); return; }
         document.querySelectorAll(".goal-edit").forEach(function (inp2) {
           var gid2 = inp2.getAttribute("data-gid");
@@ -1033,8 +1112,8 @@
   /* ---------------- Trends ---------------- */
   function goalStats(client) {
     var counts = {};
-    client.goals.filter(function (g) { return g.status === "active"; }).forEach(function (g) {
-      counts[g.id] = { accomplished: 0, declined: 0, "not-attempted": 0, goal: g };
+    client.goals.forEach(function (g) {
+      counts[g.id] = { accomplished: 0, declined: 0, "not-attempted": 0, goal: g, retired: g.status !== "active" };
     });
     state.entries.filter(function (e) { return e.clientId === client.id; }).forEach(function (e) {
       Object.keys(e.goalOutcomes).forEach(function (gid) {
@@ -1042,7 +1121,11 @@
         if (v && counts[gid]) counts[gid][v]++;
       });
     });
-    return Object.keys(counts).map(function (gid) { return counts[gid]; });
+    // Retired goals only show up here if they have logged history -- otherwise
+    // retiring a goal (often because it was mastered) would erase its trend.
+    return Object.keys(counts).map(function (gid) { return counts[gid]; }).filter(function (s) {
+      return !s.retired || (s.accomplished + s.declined + s["not-attempted"] > 0);
+    });
   }
 
   function renderTrends() {
@@ -1094,12 +1177,13 @@
 
     var goalRows = stats.length ? stats.map(function (s) {
       var n = s.accomplished + s.declined + s["not-attempted"];
+      var retiredTag = s.retired ? " · retired" : "";
       if (n === 0) {
         return '<div class="trend-goal"><div class="trend-goal-head"><span class="t">' + esc(s.goal.text) + '</span><span class="n">not logged yet</span></div></div>';
       }
       var pa = (s.accomplished / n) * 100, pd = (s.declined / n) * 100, pn = (s["not-attempted"] / n) * 100;
       return '<div class="trend-goal">' +
-        '<div class="trend-goal-head"><span class="t">' + esc(s.goal.text) + '</span><span class="n">' + n + ' logged</span></div>' +
+        '<div class="trend-goal-head"><span class="t">' + esc(s.goal.text) + '</span><span class="n">' + n + ' logged' + retiredTag + '</span></div>' +
         '<div class="trend-bar">' +
           (pa ? '<div class="trend-seg success" style="flex:' + pa + '"></div>' : "") +
           (pd ? '<div class="trend-seg caution" style="flex:' + pd + '"></div>' : "") +
@@ -1257,8 +1341,8 @@
         '<div class="sheet">' +
           '<div class="handle"></div>' +
           '<div class="sheet-head"><h2>Export shift</h2><button class="sheet-close" data-action="close">' + ICONS.x + "</button></div>" +
-          '<div class="row export-toggle" data-action="toggle-notes"><div class="check' + (includeNotes ? " on" : "") + '">' + ICONS.check + '</div>' +
-            '<div class="label">Include personal notes<span class="desc">Turn off before printing something you’ll hand to someone else.</span></div></div>' +
+          '<button type="button" class="row export-toggle" data-action="toggle-notes"><span class="check' + (includeNotes ? " on" : "") + '">' + ICONS.check + '</span>' +
+            '<span class="label">Include personal notes<span class="desc">Turn off before printing something you’ll hand to someone else.</span></span></button>' +
           '<textarea class="export-preview" readonly>' + esc(text) + "</textarea>" +
           '<div class="sheet-actions">' +
             '<button class="btn btn-ghost" data-action="copy-text">Copy as text</button>' +
@@ -1305,12 +1389,19 @@
     if (state.currentTab === "trends" && trendsEvents(t)) return;
   });
 
+  document.getElementById("view").addEventListener("change", function (e) {
+    if (e.target && e.target.id === "restore-file-input" && e.target.files && e.target.files[0]) {
+      importAllData(e.target.files[0]);
+      e.target.value = "";
+    }
+  });
+
   document.getElementById("view").addEventListener("input", function (e) {
     if (state.currentTab !== "today") return;
     var t = e.target;
     var action = t.getAttribute("data-action");
     if (!action) return;
-    var entry = ensureEntry(state.currentClientId, todayStr);
+    var entry = ensureEntry(state.currentClientId, todayStr());
     if (action === "edit-fun") entry.fun = t.value;
     if (action === "edit-note") entry.note = t.value;
     save();
